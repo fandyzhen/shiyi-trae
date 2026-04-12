@@ -7,13 +7,13 @@ const authService = new AuthService();
 export class AuthController {
   async register(req: Request, res: Response) {
     try {
-      const { username, nickname, password, confirmPassword } = req.body;
+      const { username, password, confirmPassword } = req.body;
       
       if (password !== confirmPassword) {
         return res.status(400).json({ error: 'Passwords do not match' });
       }
       
-      const user = await authService.register(username, nickname, password);
+      const user = await authService.register(username, password);
       const token = authService.generateToken(user);
       res.json({ user: { id: user.id, username: user.username, nickname: user.nickname, role: user.role }, token });
     } catch (error: any) {

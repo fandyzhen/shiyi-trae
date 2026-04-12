@@ -383,7 +383,6 @@ function LoginView({ setUser, setToken, setView, fetchUsageInfo }: any) {
 
 function RegisterView({ setView }: any) {
   const [username, setUsername] = useState('');
-  const [nickname, setNickname] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -398,7 +397,7 @@ function RegisterView({ setView }: any) {
     
     setLoading(true);
     try {
-      await axios.post(`${API_BASE}/auth/register`, { username, nickname, password, confirmPassword });
+      await axios.post(`${API_BASE}/auth/register`, { username, password, confirmPassword });
       alert('注册成功，请登录');
       setView('login');
     } catch (err: any) {
@@ -424,17 +423,6 @@ function RegisterView({ setView }: any) {
               onChange={(e) => setUsername(e.target.value)}
               className="w-full px-4 sm:px-5 py-3 sm:py-4 bg-white/5 border border-white/10 rounded-xl sm:rounded-2xl text-white placeholder-gray-500 focus:outline-none focus:border-amber-500/50 focus:ring-2 focus:ring-amber-500/20 transition-all duration-300 text-sm sm:text-base"
               placeholder="请输入用户名"
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-light text-gray-400 mb-2">昵称</label>
-            <input
-              type="text"
-              value={nickname}
-              onChange={(e) => setNickname(e.target.value)}
-              className="w-full px-4 sm:px-5 py-3 sm:py-4 bg-white/5 border border-white/10 rounded-xl sm:rounded-2xl text-white placeholder-gray-500 focus:outline-none focus:border-amber-500/50 focus:ring-2 focus:ring-amber-500/20 transition-all duration-300 text-sm sm:text-base"
-              placeholder="请输入昵称"
               required
             />
           </div>

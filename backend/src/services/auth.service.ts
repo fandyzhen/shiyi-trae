@@ -13,13 +13,13 @@ export class AuthService {
     this.jwtSecret = process.env.JWT_SECRET || 'your-secret-key';
   }
 
-  async register(username: string, nickname: string, password: string): Promise<User> {
+  async register(username: string, password: string): Promise<User> {
     if (!username) {
       throw new Error('Username is required');
     }
 
     const existingUser = await this.userRepository.findOne({
-      where: [{ username }]
+      where: { username }
     });
 
     if (existingUser) {
@@ -30,7 +30,7 @@ export class AuthService {
 
     const user = this.userRepository.create({
       username,
-      nickname,
+      nickname: username,
       password: hashedPassword,
       role: 'registered',
       registeredUsesRemaining: 10,
