@@ -36,6 +36,9 @@ export class User {
   @Column({ default: false })
   hasUsedFreeTrial: boolean;
 
+  @Column({ default: false })
+  isAdmin: boolean;
+
   @OneToMany(() => History, history => history.user)
   histories: History[];
 

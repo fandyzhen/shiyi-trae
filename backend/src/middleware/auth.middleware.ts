@@ -1,7 +1,10 @@
 import { Request, Response, NextFunction } from 'express';
 import { AuthService } from '../services/auth.service';
+import { AppDataSource } from '../config/database';
+import { User } from '../entities/User';
 
 const authService = new AuthService();
+const userRepository = AppDataSource.getRepository(User);
 
 export interface AuthRequest extends Request {
   user?: {
@@ -47,4 +50,25 @@ export function optionalAuthMiddleware(req: AuthRequest, res: Response, next: Ne
   }
   
   next();
+}
+
+export async function adminMiddleware(req: AuthRequest, res: Response, next: NextFunction) {
+  if (!req.user) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+
+  try {
+    const user = await userRepository.findOne({ where: { id: req.user.userId } });
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    if (!user.isAdmin) {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    next();
+  } catch (error) {
+    return res.status(500).json({ error: 'Failed to verify admin status' });
+  }
 }

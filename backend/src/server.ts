@@ -6,6 +6,7 @@ import { AppDataSource } from './config/database';
 import authRoutes from './routes/auth.routes';
 import tryOnRoutes from './routes/tryon.routes';
 import subscriptionRoutes from './routes/subscription.routes';
+import adminRoutes from './routes/admin.routes';
 
 dotenv.config();
 
@@ -22,6 +23,7 @@ app.use('/uploads', express.static(path.resolve(uploadDir)));
 app.use('/api/auth', authRoutes);
 app.use('/api/tryon', tryOnRoutes);
 app.use('/api/subscription', subscriptionRoutes);
+app.use('/api/admin', adminRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'Virtual Try-On API is running' });
