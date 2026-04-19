@@ -220,7 +220,7 @@ export default function Home() {
               </div>
             </div>
             <h2 className="text-4xl sm:text-5xl lg:text-6xl font-extralight tracking-tight mb-8 sm:mb-12">
-              <span className="bg-gradient-to-r from-white via-gray-200 to-gray-400 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-white via-gray-200 to-gray-400 bg-clip-text text-transparent leading-[60px]">
                 重新定义
               </span>
               <br />
