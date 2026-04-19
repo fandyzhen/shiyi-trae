@@ -6,6 +6,7 @@ import axios from 'axios';
 const API_BASE = 'http://localhost:3001/api';
 
 export default function Home() {
+  const [mounted, setMounted] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [token, setToken] = useState<string | null>(null);
   const [view, setView] = useState<'home' | 'login' | 'register' | 'tryon' | 'history' | 'subscription'>('home');
@@ -13,6 +14,7 @@ export default function Home() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     const savedToken = localStorage.getItem('token');
     const savedUser = localStorage.getItem('user');
     if (savedToken && savedUser) {
@@ -62,6 +64,10 @@ export default function Home() {
     localStorage.removeItem('user');
     setView('home');
   };
+
+  if (!mounted) {
+    return null;
+  }
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black text-white">
@@ -219,15 +225,16 @@ export default function Home() {
                 <span className="text-amber-400 text-xs sm:text-sm">✨ AI驱动</span>
               </div>
             </div>
-            <h2 className="text-4xl sm:text-5xl lg:text-6xl font-extralight tracking-tight mb-8 sm:mb-12">
-              <span className="bg-gradient-to-r from-white via-gray-200 to-gray-400 bg-clip-text text-transparent leading-[60px]">
-                重新定义
-              </span>
-              <br />
-              <span className="bg-gradient-to-r from-amber-300 via-amber-400 to-amber-500 bg-clip-text text-transparent font-light">
-                购物体验
-              </span>
-            </h2>
+            <div className="mb-8 sm:mb-12">
+              <h2 className="text-4xl sm:text-5xl lg:text-6xl font-extralight">
+                <span className="bg-gradient-to-r from-white via-gray-200 to-gray-400 bg-clip-text text-transparent block mb-6" style={{ letterSpacing: '-1px' }}>
+                  重新定义
+                </span>
+                <span className="bg-gradient-to-r from-amber-300 via-amber-400 to-amber-500 bg-clip-text text-transparent font-light block">
+                  购物体验
+                </span>
+              </h2>
+            </div>
             <p className="text-base sm:text-xl text-gray-400 font-light max-w-xl sm:max-w-2xl mx-auto mb-8 sm:mb-12 leading-relaxed px-4">
               无需试衣间，即可预见时尚，让AI为你完美呈现！
             </p>
