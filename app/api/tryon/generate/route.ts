@@ -82,7 +82,7 @@ export async function POST(request: NextRequest) {
             personPath,
             clothingPath,
             keepOriginalClothing,
-            stylePreference
+            stylePreference || undefined
           );
 
           sendProgress(80, '生成完成，保存结果...');
