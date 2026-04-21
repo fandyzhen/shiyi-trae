@@ -47,12 +47,11 @@ export async function POST(request: NextRequest) {
 
           sendProgress(5, '准备文件...');
 
-          const uploadDir = path.join(process.cwd(), 'public', 'uploads');
-          const personsDir = path.join(uploadDir, 'persons');
-          const clothingsDir = path.join(uploadDir, 'clothings');
-          const resultsDir = path.join(uploadDir, 'results');
+          const tempDir = '/tmp';
+          const personsDir = path.join(tempDir, 'persons');
+          const clothingsDir = path.join(tempDir, 'clothings');
 
-          [personsDir, clothingsDir, resultsDir].forEach(dir => {
+          [personsDir, clothingsDir].forEach(dir => {
             if (!fs.existsSync(dir)) {
               fs.mkdirSync(dir, { recursive: true });
             }
@@ -78,28 +77,22 @@ export async function POST(request: NextRequest) {
           sendProgress(40, '开始AI试衣生成...');
 
           sendProgress(50, '处理图片...');
-          const resultPath = await generateTryOn(
+          const resultImageUrl = await generateTryOn(
             personPath,
             clothingPath,
             keepOriginalClothing,
             stylePreference || undefined
           );
 
-          sendProgress(80, '生成完成，保存结果...');
-
-          const resultFilename = path.basename(resultPath);
-          const resultImageUrl = `/uploads/results/${resultFilename}`;
-
-          const personImageUrl = `/uploads/persons/${personFilename}`;
-          const clothingImageUrl = `/uploads/clothings/${clothingFilename}`;
+          sendProgress(80, '生成完成...');
 
           sendProgress(90, '保存历史记录...');
           const dataSource = await getDataSource();
           const historyRepository = dataSource.getRepository(History);
           const history = historyRepository.create({
             userId,
-            personImagePath: personImageUrl,
-            clothingImagePath: clothingImageUrl,
+            personImagePath: '',
+            clothingImagePath: '',
             resultImagePath: resultImageUrl,
             keepOriginalClothing,
             stylePreference: stylePreference || undefined,

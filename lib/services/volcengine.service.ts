@@ -90,15 +90,12 @@ export async function generateTryOn(personImagePath: string, clothingImagePath: 
     console.log('[TryOn] Calling ARK API...');
     const resultImageUrl = await arkImageGeneration(personImagePath, clothingImagePath);
 
-    console.log('[TryOn] Downloading result image...');
-    const imageResponse = await fetch(resultImageUrl);
-    const imageBuffer = await imageResponse.arrayBuffer();
-
     console.log('========================================');
     console.log('[TryOn] Generation complete!');
+    console.log('[TryOn] Result URL:', resultImageUrl);
     console.log('========================================');
 
-    return Buffer.from(imageBuffer).toString('base64');
+    return resultImageUrl;
   } catch (error: any) {
     console.error('========================================');
     console.error('[TryOn] Generation failed!');

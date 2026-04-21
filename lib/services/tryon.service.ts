@@ -23,25 +23,13 @@ export async function generateTryOn(
 
   try {
     const { generateTryOn } = await import('./volcengine.service');
-    const resultBase64 = await generateTryOn(
+    const resultUrl = await generateTryOn(
       personImagePath,
       clothingImagePath
     );
 
-    const uploadDir = path.join(process.cwd(), 'public', 'uploads');
-    const resultsDir = path.join(uploadDir, 'results');
-    
-    if (!fs.existsSync(resultsDir)) {
-      fs.mkdirSync(resultsDir, { recursive: true });
-    }
-
-    const resultFilename = `result_${Date.now()}.jpg`;
-    const resultPath = path.join(resultsDir, resultFilename);
-
-    fs.writeFileSync(resultPath, resultBase64, 'base64');
-
-    console.log('[TryOnService] Result saved to:', resultPath);
-    return resultPath;
+    console.log('[TryOnService] Result URL:', resultUrl);
+    return resultUrl;
   } catch (error) {
     console.error('[TryOnService] Generation error:', error);
     throw new Error('Failed to generate try-on image');
