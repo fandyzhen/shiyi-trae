@@ -1,5 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, ManyToOne } from 'typeorm';
-import { User } from './User';
+import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
 
 @Entity('histories')
 export class History {
@@ -24,12 +23,9 @@ export class History {
   @Column({ nullable: true })
   stylePreference: string;
 
-  @ManyToOne(() => User, user => user.histories, { onDelete: 'CASCADE' })
-  user: User;
-
   @Column()
   userId: string;
 
-  @CreateDateColumn()
+  @Column({ type: 'timestamp' })
   createdAt: Date;
 }

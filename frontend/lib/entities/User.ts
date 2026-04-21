@@ -1,6 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
-import { History } from './History';
-import { Subscription } from './Subscription';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn } from 'typeorm';
 
 export type UserRole = 'guest' | 'registered' | 'subscriber';
 
@@ -24,7 +22,7 @@ export class User {
   @Column({ nullable: true })
   password: string;
 
-  @Column({ default: 'guest' })
+  @Column({ type: 'varchar', default: 'guest' })
   role: UserRole;
 
   @Column({ default: 0 })
@@ -38,12 +36,6 @@ export class User {
 
   @Column({ default: false })
   isAdmin: boolean;
-
-  @OneToMany(() => History, history => history.user)
-  histories: History[];
-
-  @OneToMany(() => Subscription, subscription => subscription.user)
-  subscriptions: Subscription[];
 
   @CreateDateColumn()
   createdAt: Date;

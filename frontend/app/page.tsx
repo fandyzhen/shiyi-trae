@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 
-const API_BASE = 'http://localhost:3001/api';
+const API_BASE = '/api';
 
 export default function Home() {
   const [mounted, setMounted] = useState(false);
@@ -590,7 +590,7 @@ function TryOnView({ user, token, usageInfo, setUsageInfo }: any) {
                   setProgressMessage(data.message || '');
                 }
                 if (data.result) {
-                  setResultImage(`http://localhost:3001${data.result.resultImageUrl}`);
+                  setResultImage(data.result.resultImageUrl);
                   setHistoryId(data.result.historyId);
                 }
                 if (data.error) {
@@ -832,6 +832,7 @@ function HistoryView({ token }: any) {
       const res = await axios.get(`${API_BASE}/tryon/history`, {
         headers: { Authorization: `Bearer ${token}` }
       });
+      console.log('Histories data:', res.data);
       setHistories(res.data);
     } catch (err) {
       console.error('Failed to fetch histories:', err);
@@ -878,19 +879,46 @@ function HistoryView({ token }: any) {
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-          {histories.map((history) => (
+          {histories.map((history) => {
+            console.log('Rendering history item:', history);
+            const imageUrl = history.resultImagePath || history.resultImageUrl;
+            console.log('Using image URL:', imageUrl);
+            return (
             <div key={history.id} className="group backdrop-blur-2xl bg-white/5 border border-white/10 rounded-xl sm:rounded-2xl overflow-hidden hover:border-amber-500/30 hover:shadow-xl hover:shadow-amber-500/10 transition-all duration-500">
-              <div className="relative aspect-[3/4]">
-                <img src={`http://localhost:3001${history.resultImageUrl}`} alt="试衣效果" className="w-full h-full object-cover" />
+              <div className="relative aspect-[3/4] bg-gray-900">
+                {imageUrl ? (
+                  <img 
+                    src={imageUrl} 
+                    alt="试衣效果" 
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      console.error('Image failed to load:', imageUrl);
+                      (e.target as HTMLImageElement).style.display = 'none';
+                      const parent = (e.target as HTMLImageElement).parentElement;
+                      if (parent) {
+                        const errorDiv = document.createElement('div');
+                        errorDiv.className = 'flex items-center justify-center h-full text-gray-500';
+                        errorDiv.textContent = '图片加载失败';
+                        parent.appendChild(errorDiv);
+                      }
+                    }}
+                  />
+                ) : (
+                  <div className="flex items-center justify-center h-full text-gray-500">
+                    <span>图片加载失败</span>
+                  </div>
+                )}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                 <div className="absolute bottom-0 left-0 right-0 p-3 sm:p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                   <div className="flex gap-2">
                     <button
                       onClick={() => {
-                        const link = document.createElement('a');
-                        link.href = `http://localhost:3001${history.resultImageUrl}`;
-                        link.download = `tryon-${history.id}.jpg`;
-                        link.click();
+                        if (imageUrl) {
+                          const link = document.createElement('a');
+                          link.href = imageUrl;
+                          link.download = `tryon-${history.id}.jpg`;
+                          link.click();
+                        }
                       }}
                       className="flex-1 py-2 sm:py-2.5 bg-white/20 backdrop-blur-sm text-white rounded-lg sm:rounded-xl text-xs sm:text-sm font-light hover:bg-white/30 transition-colors"
                     >
@@ -906,10 +934,20 @@ function HistoryView({ token }: any) {
                 </div>
               </div>
               <div className="p-4 sm:p-5">
-                <p className="text-gray-500 text-xs sm:text-sm font-light">{new Date(history.createdAt).toLocaleDateString('zh-CN', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
+                <p className="text-gray-500 text-xs sm:text-sm font-light">
+                  {new Date(history.createdAt).toLocaleString('zh-CN', { 
+                    year: 'numeric', 
+                    month: '2-digit', 
+                    day: '2-digit', 
+                    hour: '2-digit', 
+                    minute: '2-digit',
+                    hour12: false
+                  })}
+                </p>
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

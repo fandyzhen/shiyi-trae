@@ -1,5 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne } from 'typeorm';
-import { User } from './User';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn } from 'typeorm';
 
 export type SubscriptionStatus = 'active' | 'expired' | 'cancelled';
 export type SubscriptionPlan = 'monthly' | 'yearly';
@@ -9,10 +8,10 @@ export class Subscription {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ default: 'monthly' })
+  @Column({ type: 'varchar', default: 'monthly' })
   plan: SubscriptionPlan;
 
-  @Column({ default: 'active' })
+  @Column({ type: 'varchar', default: 'active' })
   status: SubscriptionStatus;
 
   @Column('decimal', { precision: 10, scale: 2 })
@@ -26,9 +25,6 @@ export class Subscription {
 
   @Column()
   endDate: Date;
-
-  @ManyToOne(() => User, user => user.subscriptions, { onDelete: 'CASCADE' })
-  user: User;
 
   @Column()
   userId: string;

@@ -28,7 +28,7 @@ export async function generateTryOn(
       clothingImagePath
     );
 
-    const uploadDir = process.env.UPLOAD_DIR || './uploads';
+    const uploadDir = path.join(process.cwd(), 'public', 'uploads');
     const resultsDir = path.join(uploadDir, 'results');
     
     if (!fs.existsSync(resultsDir)) {

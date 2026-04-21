@@ -12,7 +12,7 @@ const databaseUrl = process.env.DATABASE_URL || '';
 export const AppDataSource = new DataSource({
   type: 'postgres',
   url: databaseUrl,
-  synchronize: process.env.NODE_ENV === 'development',
+  synchronize: false,
   logging: process.env.NODE_ENV === 'development',
   entities: [User, History, Subscription, UsageRecord],
   migrations: [],
