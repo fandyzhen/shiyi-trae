@@ -9,158 +9,198 @@
 - 💾 **历史记录**：保存试衣历史，随时查看和下载
 - ⚡ **进度显示**：实时进度条，减少等待焦虑
 - 🎨 **搭配选择**：可选择是否保留原衣服，支持多种搭配风格
+- 🔐 **管理后台**：管理员可查看统计数据、管理用户和订阅
 
 ## 技术栈
 
-### 前端
-- Next.js 14
-- React 18
-- TypeScript
-- Tailwind CSS
-- Axios
+### 核心框架
+- **框架**: Next.js 14 (App Router)
+- **语言**: TypeScript 5
+- **运行时**: Node.js 18+
 
-### 后端
-- Node.js + Express
-- TypeScript
-- TypeORM
-- PostgreSQL
-- JWT认证
-- 火山引擎AI API
+### 前端技术
+- **UI框架**: React 18
+- **样式**: Tailwind CSS 3.4
+- **状态管理**: React Context API
+- **HTTP客户端**: Axios
+
+### 后端技术（集成在 Next.js 中）
+- **API路由**: Next.js API Routes
+- **ORM**: TypeORM 0.3.19
+- **数据库**: PostgreSQL (支持 Neon 等云数据库)
+- **认证**: JWT (jsonwebtoken)
+- **文件上传**: Multer
+- **图片处理**: Sharp
+- **AI服务**: 火山引擎 API
 
 ## 快速开始
 
 ### 前置要求
 - Node.js 18+
-- PostgreSQL 14+
+- PostgreSQL 数据库（或 Neon 等云数据库）
 - 火山引擎账号（用于AI API）
 
 ### 1. 安装依赖
 
 ```bash
-# 安装根目录依赖
-npm install
-
-# 安装后端依赖
-cd backend
-npm install
-
-# 安装前端依赖
-cd ../frontend
+cd frontend
 npm install
 ```
 
-### 2. 配置数据库
+### 2. 配置环境变量
 
-创建PostgreSQL数据库：
-
-```sql
-CREATE DATABASE virtual_try_on;
-```
-
-### 3. 配置环境变量
-
-复制并编辑后端环境变量：
+创建 `.env` 文件：
 
 ```bash
-cd backend
 cp .env.example .env
-# 编辑 .env 文件，填入你的数据库和火山引擎API信息
 ```
 
-### 4. 启动项目
+编辑 `.env` 文件，填入以下配置：
+
+```env
+# 数据库配置（Neon PostgreSQL）
+DATABASE_URL="postgresql://username:password@host/database?sslmode=require"
+
+# JWT 密钥
+JWT_SECRET="your-super-secret-jwt-key-change-this-in-production"
+
+# 火山引擎 API 配置
+VOLCENGINE_ACCESS_KEY="your-volcengine-access-key"
+VOLCENGINE_SECRET_KEY="your-volcengine-secret-key"
+VOLCENGINE_ENDPOINT="https://visual.volces.com"
+```
+
+### 3. 启动开发服务器
 
 ```bash
-# 同时启动前后端
 npm run dev
+```
 
-# 或者分别启动
-npm run dev:backend  # 后端在 http://localhost:3001
-npm run dev:frontend # 前端在 http://localhost:3000
+应用将在 http://localhost:3000 启动
+
+### 4. 构建生产版本
+
+```bash
+npm run build
+npm start
 ```
 
 ## 项目结构
 
 ```
 shiyi-trae/
-├── backend/              # Express后端
-│   ├── src/
-│   │   ├── entities/    # 数据库实体
-│   │   ├── controllers/ # 控制器
-│   │   ├── services/    # 业务逻辑
-│   │   ├── middleware/  # 中间件
-│   │   ├── routes/      # 路由
-│   │   ├── config/      # 配置
-│   │   └── server.ts    # 入口文件
-│   ├── uploads/         # 上传文件存储
-│   └── package.json
-├── frontend/             # Next.js前端
-│   ├── app/             # App Router
-│   └── package.json
-└── package.json         # 根package.json
+├── frontend/                 # Next.js 全栈应用
+│   ├── app/                 # App Router
+│   │   ├── api/            # API Routes (后端API)
+│   │   │   ├── auth/       # 认证相关API
+│   │   │   ├── tryon/      # 试衣功能API
+│   │   │   ├── subscription/# 订阅管理API
+│   │   │   └── admin/      # 管理后台API
+│   │   ├── admin/          # 管理后台页面
+│   │   ├── page.tsx        # 首页
+│   │   └── layout.tsx      # 根布局
+│   ├── lib/                # 核心库
+│   │   ├── entities/       # TypeORM 实体
+│   │   ├── services/       # 业务逻辑服务
+│   │   ├── middleware/     # 认证中间件
+│   │   └── config/         # 配置文件
+│   ├── public/             # 静态资源
+│   ├── package.json
+│   └── next.config.js
+├── backend111/              # 旧后端备份（可删除）
+├── README.md
+└── package.json
 ```
 
-## 使用指南
+## API 路由说明
 
-### 免费试用
-1. 访问首页，点击"免登录试用"
-2. 上传你的正面全身照
-3. 上传想要试穿的衣服图片
-4. 选择是否保留原衣服
-5. 点击"生成试衣效果"
+### 认证 API
+- `POST /api/auth/register` - 用户注册
+- `POST /api/auth/login` - 用户登录
+- `POST /api/auth/guest` - 游客登录
+- `GET /api/auth/profile` - 获取用户信息
 
-### 注册使用
-1. 免费试用后可注册账号获得10次使用机会
-2. 注册后可以保存历史记录
-3. 10次用完后可订阅会员无限使用
+### 试衣 API
+- `POST /api/tryon/generate` - 生成试衣效果
+- `GET /api/tryon/history` - 获取历史记录
+- `GET /api/tryon/usage` - 获取使用统计
 
-### 会员订阅
-- 月度会员：¥9.9/月
-- 年度会员：¥99/年（推荐，更划算）
+### 订阅 API
+- `GET /api/subscription` - 获取订阅信息
+- `POST /api/subscription` - 创建/更新订阅
 
-## SPEC确认
+### 管理 API
+- `GET /api/admin/stats` - 获取统计数据
+- `GET /api/admin/users` - 获取用户列表
+- `GET /api/admin/subscriptions` - 获取订阅列表
+- `POST /api/admin/setup` - 初始化管理员账号
 
-本项目基于以下完善后的SPEC开发：
+## 部署到 Vercel
 
-### 1. 项目背景和目标人群
-- 背景：解决网购衣服时不知道试穿效果的困扰
-- 目标人群：全年龄段通用
+### 1. 准备环境变量
 
-### 2. 实施方案
-- 人物照片：仅正面全身照
-- 衣服照片：不做限制
-- 生成效果：每次1张静态图
-- 免注册试用：1次完整试衣
-- 注册后：永久10次
-- 订阅：¥9.9/月，月付/年付，微信支付
+在 Vercel Dashboard 中设置以下环境变量：
+- `DATABASE_URL` - 数据库连接字符串
+- `JWT_SECRET` - JWT 密钥
+- `VOLCENGINE_ACCESS_KEY` - 火山引擎 Access Key
+- `VOLCENGINE_SECRET_KEY` - 火山引擎 Secret Key
 
-### 3. 技术方案
-- 前端：Next.js
-- 后端：Node.js + Express
-- 数据库：PostgreSQL
-- AI：火山引擎即梦AI/SeedEdit/人像抠图
+### 2. 部署
 
-### 4. 明确不做的事项
-- 不对用户身材做评价
-- 不给出穿搭建议
-- 不推荐购买
+```bash
+# 使用 Vercel CLI
+vercel --prod
 
-### 5. 成功标准
-- 产品：生成时间<30秒，用户满意度>80%
-- 商业：月活>1000，留存率>30%，转化率>5%
+# 或在 Vercel Dashboard 中导入 Git 仓库
+```
+
+### 3. 数据库迁移
+
+部署后，TypeORM 会自动同步数据库结构（开发环境）。
+生产环境建议使用迁移文件。
 
 ## 开发说明
 
-### 火山引擎AI集成
-当前使用火山引擎AI API实现虚拟试衣，包括：
-- 即梦AI 4.0：图像生成和编辑
-- 人像抠图：人物分割
-- SeedEdit：指令编辑
+### 数据库实体
 
-如果火山引擎API效果不理想，可以轻松替换为其他AI方案（如Stable Diffusion）。
+- **User** - 用户信息
+- **History** - 试衣历史记录
+- **Subscription** - 订阅信息
+- **UsageRecord** - 使用记录
 
-### 图片存储
-当前使用本地文件系统存储，生产环境建议使用对象存储（如火山引擎TOS、阿里云OSS等）。
+### 认证流程
+
+1. 用户注册/登录获取 JWT Token
+2. 后续请求携带 `Authorization: Bearer <token>` 头部
+3. 中间件验证 Token 并注入用户信息
+
+### 文件上传
+
+上传的文件存储在 `public/uploads/` 目录：
+- `persons/` - 人物照片
+- `clothings/` - 衣服照片
+- `results/` - 生成的试衣结果
+
+## 注意事项
+
+1. **环境变量**：确保所有必需的环境变量已正确配置
+2. **数据库连接**：使用 Neon 等云数据库时，确保 IP 白名单配置正确
+3. **文件存储**：Vercel 为无服务器环境，文件上传建议使用外部存储（如 AWS S3、Cloudinary）
+4. **API 限制**：火山引擎 API 有调用频率限制，请合理控制请求频率
+
+## 技术亮点
+
+- ✅ **全栈一体化**：使用 Next.js 统一前后端，简化部署流程
+- ✅ **TypeScript 全链路**：从数据库到前端完整的类型安全
+- ✅ **现代化架构**：App Router、Server Components、API Routes
+- ✅ **云原生部署**：一键部署到 Vercel，支持 Edge Runtime
+- ✅ **类型安全 ORM**：TypeORM 提供完整的类型支持和数据库抽象
 
 ## 许可证
 
-MIT
+MIT License
+
+## 致谢
+
+- 火山引擎提供 AI 试衣 API 支持
+- Next.js 团队提供优秀的全栈框架

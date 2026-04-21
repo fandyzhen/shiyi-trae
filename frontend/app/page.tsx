@@ -12,6 +12,7 @@ export default function Home() {
   const [view, setView] = useState<'home' | 'login' | 'register' | 'tryon' | 'history' | 'subscription'>('home');
   const [usageInfo, setUsageInfo] = useState<any>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isGuestLoading, setIsGuestLoading] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -42,16 +43,19 @@ export default function Home() {
   };
 
   const handleGuest = async () => {
+    setIsGuestLoading(true);
     try {
       const res = await axios.post(`${API_BASE}/auth/guest`);
       setToken(res.data.token);
       setUser(res.data.user);
       localStorage.setItem('token', res.data.token);
       localStorage.setItem('user', JSON.stringify(res.data.user));
-      fetchUsageInfo(res.data.token);
       setView('tryon');
+      fetchUsageInfo(res.data.token);
     } catch (err) {
       alert('创建访客用户失败');
+    } finally {
+      setIsGuestLoading(false);
     }
   };
 
@@ -241,13 +245,26 @@ export default function Home() {
             <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 justify-center px-4">
               <button
                 onClick={handleGuest}
-                className="group relative px-8 sm:px-10 py-4 bg-gradient-to-r from-amber-500 via-amber-600 to-amber-700 text-white rounded-full font-light tracking-wider overflow-hidden transition-all duration-500 hover:shadow-2xl hover:shadow-amber-500/30 hover:scale-105"
+                disabled={isGuestLoading}
+                className="group relative px-8 sm:px-10 py-4 bg-gradient-to-r from-amber-500 via-amber-600 to-amber-700 text-white rounded-full font-light tracking-wider overflow-hidden transition-all duration-500 hover:shadow-2xl hover:shadow-amber-500/30 hover:scale-105 disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:scale-100"
               >
                 <span className="relative z-10 flex items-center justify-center gap-2">
-                  <span>立即体验</span>
-                  <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform hidden sm:inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                  </svg>
+                  {isGuestLoading ? (
+                    <>
+                      <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                      </svg>
+                      <span>创建中...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>立即体验</span>
+                      <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform hidden sm:inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                      </svg>
+                    </>
+                  )}
                 </span>
                 <div className="absolute inset-0 bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
               </button>
