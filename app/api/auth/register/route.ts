@@ -2,11 +2,23 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(request: NextRequest) {
   try {
+    const { verifyTurnstileToken } = await import('@/lib/services/turnstile.service');
     const { register, generateToken } = await import('@/lib/services/auth.service');
-    const { username, password, confirmPassword } = await request.json();
+    const { username, password, confirmPassword, 'cf-turnstile-response': turnstileToken } = await request.json();
     
     if (password !== confirmPassword) {
       return NextResponse.json({ error: 'Passwords do not match' }, { status: 400 });
+    }
+    
+    if (process.env.CF_TURNSTILE_SECRET_KEY && !turnstileToken) {
+      return NextResponse.json({ error: '验证失败，请重试' }, { status: 400 });
+    }
+    
+    if (process.env.CF_TURNSTILE_SECRET_KEY) {
+      const isValid = await verifyTurnstileToken(turnstileToken);
+      if (!isValid) {
+        return NextResponse.json({ error: '验证失败，请重试' }, { status: 400 });
+      }
     }
     
     const user = await register(username, password);

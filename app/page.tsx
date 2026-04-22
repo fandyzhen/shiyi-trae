@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import TurnstileWidget from '@/components/TurnstileWidget';
 
 const API_BASE = '/api';
 
@@ -13,6 +14,7 @@ export default function Home() {
   const [usageInfo, setUsageInfo] = useState<any>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isGuestLoading, setIsGuestLoading] = useState(false);
+  const [guestTurnstileToken, setGuestTurnstileToken] = useState<string | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -43,17 +45,24 @@ export default function Home() {
   };
 
   const handleGuest = async () => {
+    if (!guestTurnstileToken) {
+      alert('请先完成人机验证');
+      return;
+    }
+    
     setIsGuestLoading(true);
     try {
-      const res = await axios.post(`${API_BASE}/auth/guest`);
+      const res = await axios.post(`${API_BASE}/auth/guest`, {
+        'cf-turnstile-response': guestTurnstileToken,
+      });
       setToken(res.data.token);
       setUser(res.data.user);
       localStorage.setItem('token', res.data.token);
       localStorage.setItem('user', JSON.stringify(res.data.user));
       setView('tryon');
       fetchUsageInfo(res.data.token);
-    } catch (err) {
-      alert('创建访客用户失败');
+    } catch (err: any) {
+      alert(err.response?.data?.error || '创建访客用户失败');
     } finally {
       setIsGuestLoading(false);
     }
@@ -144,8 +153,7 @@ export default function Home() {
                 </>
               )}
             </div>
-
-            <button 
+            <button
               className="md:hidden text-gray-400 hover:text-white p-2"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             >
@@ -242,10 +250,20 @@ export default function Home() {
             <p className="text-base sm:text-xl text-gray-400 font-light max-w-xl sm:max-w-2xl mx-auto mb-8 sm:mb-12 leading-relaxed px-4">
               无需试衣间，即可预见时尚，让AI为你完美呈现！
             </p>
+            {process.env.NEXT_PUBLIC_CF_TURNSTILE_SITE_KEY && (
+              <div className="mb-6">
+                <TurnstileWidget
+                  siteKey={process.env.NEXT_PUBLIC_CF_TURNSTILE_SITE_KEY}
+                  onVerify={setGuestTurnstileToken}
+                  onExpire={() => setGuestTurnstileToken(null)}
+                  onError={() => setGuestTurnstileToken(null)}
+                />
+              </div>
+            )}
             <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 justify-center px-4">
               <button
                 onClick={handleGuest}
-                disabled={isGuestLoading}
+                disabled={isGuestLoading || !guestTurnstileToken}
                 className="group relative px-8 sm:px-10 py-4 bg-gradient-to-r from-amber-500 via-amber-600 to-amber-700 text-white rounded-full font-light tracking-wider overflow-hidden transition-all duration-500 hover:shadow-2xl hover:shadow-amber-500/30 hover:scale-105 disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:scale-100"
               >
                 <span className="relative z-10 flex items-center justify-center gap-2">
@@ -410,6 +428,7 @@ function RegisterView({ setView }: any) {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [registerTurnstileToken, setRegisterTurnstileToken] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -419,9 +438,19 @@ function RegisterView({ setView }: any) {
       return;
     }
     
+    if (!registerTurnstileToken) {
+      alert('请先完成人机验证');
+      return;
+    }
+    
     setLoading(true);
     try {
-      await axios.post(`${API_BASE}/auth/register`, { username, password, confirmPassword });
+      await axios.post(`${API_BASE}/auth/register`, { 
+        username, 
+        password, 
+        confirmPassword,
+        'cf-turnstile-response': registerTurnstileToken,
+      });
       alert('注册成功，请登录');
       setView('login');
     } catch (err: any) {
@@ -472,9 +501,17 @@ function RegisterView({ setView }: any) {
               required
             />
           </div>
+          {process.env.NEXT_PUBLIC_CF_TURNSTILE_SITE_KEY && (
+            <TurnstileWidget
+              siteKey={process.env.NEXT_PUBLIC_CF_TURNSTILE_SITE_KEY}
+              onVerify={setRegisterTurnstileToken}
+              onExpire={() => setRegisterTurnstileToken(null)}
+              onError={() => setRegisterTurnstileToken(null)}
+            />
+          )}
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || !registerTurnstileToken}
             className="w-full py-3.5 sm:py-4 bg-gradient-to-r from-amber-500 via-amber-600 to-amber-700 text-white rounded-xl sm:rounded-2xl font-light tracking-wide text-sm sm:text-base hover:shadow-lg hover:shadow-amber-500/25 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
           >
             {loading ? '注册中...' : '注册'}
@@ -503,6 +540,7 @@ function TryOnView({ user, token, usageInfo, setUsageInfo }: any) {
   const [progressMessage, setProgressMessage] = useState('');
   const [resultImage, setResultImage] = useState<string | null>(null);
   const [historyId, setHistoryId] = useState<string | null>(null);
+  const [tryOnTurnstileToken, setTryOnTurnstileToken] = useState<string | null>(null);
 
   useEffect(() => {
     const refreshUsage = async () => {
@@ -538,6 +576,11 @@ function TryOnView({ user, token, usageInfo, setUsageInfo }: any) {
       alert('请上传人物照片和衣服照片');
       return;
     }
+    
+    if (!tryOnTurnstileToken) {
+      alert('请先完成人机验证');
+      return;
+    }
 
     setGenerating(true);
     setProgress(0);
@@ -547,6 +590,7 @@ function TryOnView({ user, token, usageInfo, setUsageInfo }: any) {
     formData.append('personImage', personImage);
     formData.append('clothingImage', clothingImage);
     formData.append('keepOriginalClothing', keepOriginalClothing.toString());
+    formData.append('cf-turnstile-response', tryOnTurnstileToken);
     if (!keepOriginalClothing) {
       formData.append('stylePreference', stylePreference);
     }
@@ -749,30 +793,42 @@ function TryOnView({ user, token, usageInfo, setUsageInfo }: any) {
         </div>
 
         {!resultImage ? (
-          <button
-            onClick={handleGenerate}
-            disabled={generating || !personImage || !clothingImage}
-            className="group relative w-full py-4 sm:py-5 bg-gradient-to-r from-amber-500 via-amber-600 to-amber-700 text-white rounded-xl sm:rounded-2xl font-light tracking-wide text-sm sm:text-base overflow-hidden disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
-          >
-            <span className="relative z-10 flex items-center justify-center gap-2">
-              {generating ? (
-                <>
-                  <svg className="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  <span>生成中...</span>
-                </>
-              ) : (
-                <>
-                  <span>生成试衣效果</span>
-                  <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform hidden sm:inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                  </svg>
-                </>
-              )}
-            </span>
+          <>
+            {process.env.NEXT_PUBLIC_CF_TURNSTILE_SITE_KEY && (
+              <div className="mb-6">
+                <TurnstileWidget
+                  siteKey={process.env.NEXT_PUBLIC_CF_TURNSTILE_SITE_KEY}
+                  onVerify={setTryOnTurnstileToken}
+                  onExpire={() => setTryOnTurnstileToken(null)}
+                  onError={() => setTryOnTurnstileToken(null)}
+                />
+              </div>
+            )}
+            <button
+              onClick={handleGenerate}
+              disabled={generating || !personImage || !clothingImage || !tryOnTurnstileToken}
+              className="group relative w-full py-4 sm:py-5 bg-gradient-to-r from-amber-500 via-amber-600 to-amber-700 text-white rounded-xl sm:rounded-2xl font-light tracking-wide text-sm sm:text-base overflow-hidden disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
+            >
+              <span className="relative z-10 flex items-center justify-center gap-2">
+                {generating ? (
+                  <>
+                    <svg className="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span>生成中...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>生成试衣效果</span>
+                    <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform hidden sm:inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                    </svg>
+                  </>
+                )}
+              </span>
           </button>
+              </>
         ) : (
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
             <button
