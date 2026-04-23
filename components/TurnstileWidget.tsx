@@ -32,69 +32,72 @@ export default function TurnstileWidget({
 }: TurnstileWidgetProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const widgetIdRef = useRef<string>();
-  const [isReady, setIsReady] = useState(false);
+  const onVerifyRef = useRef(onVerify);
+  const onExpireRef = useRef(onExpire);
+  const onErrorRef = useRef(onError);
+
+  useEffect(() => {
+    onVerifyRef.current = onVerify;
+  }, [onVerify]);
+
+  useEffect(() => {
+    onExpireRef.current = onExpire;
+  }, [onExpire]);
+
+  useEffect(() => {
+    onErrorRef.current = onError;
+  }, [onError]);
 
   useEffect(() => {
     const scriptId = 'cf-turnstile-script';
 
-    const initScript = () => {
-      if (document.getElementById(scriptId)) {
-        if (window.turnstile) {
-          setIsReady(true);
-        }
-        return;
-      }
+    if (document.getElementById(scriptId)) {
+      return;
+    }
 
-      const script = document.createElement('script');
-      script.id = scriptId;
-      script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
-      script.async = true;
-      script.defer = true;
-
-      script.onload = () => {
-        setIsReady(true);
-      };
-
-      script.onerror = () => {
-        console.error('Failed to load Turnstile script');
-      };
-
-      document.body.appendChild(script);
-    };
-
-    initScript();
+    const script = document.createElement('script');
+    script.id = scriptId;
+    script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
+    script.async = true;
+    script.defer = true;
+    document.body.appendChild(script);
   }, []);
 
   useEffect(() => {
-    if (!isReady || !containerRef.current || !window.turnstile || !siteKey) return;
+    if (!containerRef.current || !window.turnstile || !siteKey || widgetIdRef.current) return;
 
-    const id = window.turnstile.render(containerRef.current, {
-      sitekey: siteKey,
-      theme,
-      size,
-      callback: (token: string) => {
-        onVerify(token);
-      },
-      'expired-callback': () => {
-        onExpire?.();
-      },
-      'error-callback': () => {
-        onError?.();
-      },
-    });
+    try {
+      const id = window.turnstile.render(containerRef.current, {
+        sitekey: siteKey,
+        theme,
+        size,
+        callback: (token: string) => {
+          onVerifyRef.current?.(token);
+        },
+        'expired-callback': () => {
+          onExpireRef.current?.();
+        },
+        'error-callback': () => {
+          onErrorRef.current?.();
+        },
+      });
 
-    widgetIdRef.current = id;
+      widgetIdRef.current = id;
+    } catch (e) {
+      console.error('Failed to render Turnstile widget:', e);
+    }
 
     return () => {
       if (widgetIdRef.current && window.turnstile) {
         try {
           window.turnstile.remove(widgetIdRef.current);
+          widgetIdRef.current = undefined;
         } catch (e) {
           console.error('Failed to remove Turnstile widget:', e);
         }
       }
     };
-  }, [isReady, siteKey, theme, size, onVerify, onExpire, onError]);
+  }, [siteKey, theme, size]);
 
   return (
     <div>
