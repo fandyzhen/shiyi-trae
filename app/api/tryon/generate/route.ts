@@ -82,6 +82,7 @@ export async function POST(request: NextRequest) {
             personPath,
             clothingPath,
             keepOriginalClothing,
+            userId,
             stylePreference || undefined
           );
 
