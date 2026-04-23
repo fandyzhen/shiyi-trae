@@ -35,6 +35,11 @@ export default function TurnstileWidget({
   const onVerifyRef = useRef(onVerify);
   const onExpireRef = useRef(onExpire);
   const onErrorRef = useRef(onError);
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   useEffect(() => {
     onVerifyRef.current = onVerify;
@@ -49,6 +54,8 @@ export default function TurnstileWidget({
   }, [onError]);
 
   useEffect(() => {
+    if (!isClient) return;
+
     const scriptId = 'cf-turnstile-script';
 
     if (document.getElementById(scriptId)) {
@@ -61,31 +68,40 @@ export default function TurnstileWidget({
     script.async = true;
     script.defer = true;
     document.body.appendChild(script);
-  }, []);
+  }, [isClient]);
 
   useEffect(() => {
-    if (!containerRef.current || !window.turnstile || !siteKey || widgetIdRef.current) return;
+    if (!isClient || !containerRef.current || !siteKey || widgetIdRef.current) return;
 
-    try {
-      const id = window.turnstile.render(containerRef.current, {
-        sitekey: siteKey,
-        theme,
-        size,
-        callback: (token: string) => {
-          onVerifyRef.current?.(token);
-        },
-        'expired-callback': () => {
-          onExpireRef.current?.();
-        },
-        'error-callback': () => {
-          onErrorRef.current?.();
-        },
-      });
+    const attemptRender = () => {
+      if (!window.turnstile) {
+        setTimeout(attemptRender, 100);
+        return;
+      }
 
-      widgetIdRef.current = id;
-    } catch (e) {
-      console.error('Failed to render Turnstile widget:', e);
-    }
+      try {
+        const id = window.turnstile.render(containerRef.current, {
+          sitekey: siteKey,
+          theme,
+          size,
+          callback: (token: string) => {
+            onVerifyRef.current?.(token);
+          },
+          'expired-callback': () => {
+            onExpireRef.current?.();
+          },
+          'error-callback': () => {
+            onErrorRef.current?.();
+          },
+        });
+
+        widgetIdRef.current = id;
+      } catch (e) {
+        console.error('Failed to render Turnstile widget:', e);
+      }
+    };
+
+    attemptRender();
 
     return () => {
       if (widgetIdRef.current && window.turnstile) {
@@ -97,7 +113,7 @@ export default function TurnstileWidget({
         }
       }
     };
-  }, [siteKey, theme, size]);
+  }, [isClient, siteKey, theme, size]);
 
   return (
     <div>
