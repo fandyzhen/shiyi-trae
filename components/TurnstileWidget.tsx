@@ -74,7 +74,7 @@ export default function TurnstileWidget({
     if (!isClient || !containerRef.current || !siteKey || widgetIdRef.current) return;
 
     const attemptRender = () => {
-      if (!window.turnstile) {
+      if (!window.turnstile || !containerRef.current) {
         setTimeout(attemptRender, 100);
         return;
       }
