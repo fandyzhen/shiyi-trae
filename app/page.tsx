@@ -339,7 +339,7 @@ export default function Home() {
 }
 
 function LoginView({ setUser, setToken, setView, fetchUsageInfo }: any) {
-  const [username, setUsername] = useState('');
+  const [emailOrUsername, setEmailOrUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
@@ -348,7 +348,7 @@ function LoginView({ setUser, setToken, setView, fetchUsageInfo }: any) {
     e.preventDefault();
     setLoading(true);
     try {
-      const res = await axios.post(`${API_BASE}/auth/login`, { username, password });
+      const res = await axios.post(`${API_BASE}/auth/login`, { emailOrUsername, password });
       setToken(res.data.token);
       setUser(res.data.user);
       localStorage.setItem('token', res.data.token);
@@ -375,13 +375,13 @@ function LoginView({ setUser, setToken, setView, fetchUsageInfo }: any) {
         </div>
         <form onSubmit={handleSubmit} className="space-y-5 sm:space-y-6">
           <div>
-            <label className="block text-sm font-light text-gray-400 mb-2">用户名</label>
+            <label className="block text-sm font-light text-gray-400 mb-2">邮箱或用户名</label>
             <input
               type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
+              value={emailOrUsername}
+              onChange={(e) => setEmailOrUsername(e.target.value)}
               className="w-full px-4 sm:px-5 py-3 sm:py-4 bg-white/5 border border-white/10 rounded-xl sm:rounded-2xl text-white placeholder-gray-500 focus:outline-none focus:border-amber-500/50 focus:ring-2 focus:ring-amber-500/20 transition-all duration-300 text-sm sm:text-base"
-              placeholder="请输入用户名"
+              placeholder="请输入邮箱或用户名"
               required
             />
           </div>
@@ -424,6 +424,7 @@ function LoginView({ setUser, setToken, setView, fetchUsageInfo }: any) {
 }
 
 function RegisterView({ setView }: any) {
+  const [email, setEmail] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -446,6 +447,7 @@ function RegisterView({ setView }: any) {
     setLoading(true);
     try {
       await axios.post(`${API_BASE}/auth/register`, { 
+        email,
         username, 
         password, 
         confirmPassword,
@@ -498,6 +500,17 @@ function RegisterView({ setView }: any) {
               onChange={(e) => setConfirmPassword(e.target.value)}
               className="w-full px-4 sm:px-5 py-3 sm:py-4 bg-white/5 border border-white/10 rounded-xl sm:rounded-2xl text-white placeholder-gray-500 focus:outline-none focus:border-amber-500/50 focus:ring-2 focus:ring-amber-500/20 transition-all duration-300 text-sm sm:text-base"
               placeholder="请再次输入密码"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-light text-gray-400 mb-2">邮箱 (EMAIL)</label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full px-4 sm:px-5 py-3 sm:py-4 bg-white/5 border border-white/10 rounded-xl sm:rounded-2xl text-white placeholder-gray-500 focus:outline-none focus:border-amber-500/50 focus:ring-2 focus:ring-amber-500/20 transition-all duration-300 text-sm sm:text-base"
+              placeholder="请输入邮箱地址"
               required
             />
           </div>

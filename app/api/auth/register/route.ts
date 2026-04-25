@@ -4,7 +4,7 @@ export async function POST(request: NextRequest) {
   try {
     const { verifyTurnstileToken } = await import('@/lib/services/turnstile.service');
     const { register, generateToken } = await import('@/lib/services/auth.service');
-    const { username, password, confirmPassword, 'cf-turnstile-response': turnstileToken } = await request.json();
+    const { email, username, password, confirmPassword, 'cf-turnstile-response': turnstileToken } = await request.json();
     
     if (password !== confirmPassword) {
       return NextResponse.json({ error: 'Passwords do not match' }, { status: 400 });
@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
       }
     }
     
-    const user = await register(username, password);
+    const user = await register(email, username, password);
     const token = generateToken(user);
     return NextResponse.json({ 
       user: { id: user.id, username: user.username, nickname: user.nickname, role: user.role }, 

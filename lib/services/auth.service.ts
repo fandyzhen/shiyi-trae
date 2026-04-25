@@ -3,12 +3,32 @@ import bcrypt from 'bcryptjs';
 import { getDataSource } from '../config/database';
 import { User } from '../entities/User';
 
-export async function register(username: string, password: string): Promise<User> {
+export async function register(email: string, username: string, password: string): Promise<User> {
   const dataSource = await getDataSource();
   const userRepository = dataSource.getRepository(User);
   
+  if (!email) {
+    throw new Error('Email is required');
+  }
   if (!username) {
     throw new Error('Username is required');
+  }
+  if (!password) {
+    throw new Error('Password is required');
+  }
+
+  // Validate email format
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    throw new Error('Invalid email format');
+  }
+
+  const existingEmail = await userRepository.findOne({
+    where: { email }
+  });
+
+  if (existingEmail) {
+    throw new Error('Email already exists');
   }
 
   const existingUser = await userRepository.findOne({
@@ -22,6 +42,7 @@ export async function register(username: string, password: string): Promise<User
   const hashedPassword = await bcrypt.hash(password, 10);
 
   const user = userRepository.create({
+    email,
     username,
     nickname: username,
     password: hashedPassword,
@@ -33,19 +54,22 @@ export async function register(username: string, password: string): Promise<User
   return await userRepository.save(user);
 }
 
-export async function login(username: string, password: string): Promise<{ user: User; token: string }> {
+export async function login(emailOrUsername: string, password: string): Promise<{ user: User; token: string }> {
   const dataSource = await getDataSource();
   const userRepository = dataSource.getRepository(User);
   
-  if (!username) {
-    throw new Error('Username is required');
+  if (!emailOrUsername) {
+    throw new Error('Email or username is required');
   }
   if (!password) {
     throw new Error('Password is required');
   }
 
   const user = await userRepository.findOne({
-    where: { username }
+    where: [
+      { email: emailOrUsername },
+      { username: emailOrUsername }
+    ]
   });
 
   if (!user) {
