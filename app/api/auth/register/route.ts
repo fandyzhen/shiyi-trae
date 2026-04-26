@@ -4,6 +4,7 @@ export async function POST(request: NextRequest) {
   try {
     const { verifyTurnstileToken } = await import('@/lib/services/turnstile.service');
     const { register, generateToken } = await import('@/lib/services/auth.service');
+    const { sendWelcomeEmail } = await import('@/lib/services/email.service');
     const { email, username, password, confirmPassword, 'cf-turnstile-response': turnstileToken } = await request.json();
     
     if (password !== confirmPassword) {
@@ -23,6 +24,13 @@ export async function POST(request: NextRequest) {
     
     const user = await register(email, username, password);
     const token = generateToken(user);
+
+    try {
+      await sendWelcomeEmail(email, username);
+    } catch (emailError) {
+      console.error('[Register] Failed to send welcome email:', emailError);
+    }
+
     return NextResponse.json({ 
       user: { id: user.id, username: user.username, nickname: user.nickname, role: user.role }, 
       token 
