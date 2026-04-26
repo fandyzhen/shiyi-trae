@@ -20,7 +20,7 @@ export default function AdminLoginPage() {
 
     try {
       const res = await axios.post(`${API_BASE}/auth/login`, {
-        username,
+        emailOrUsername: username,
         password,
       });
 

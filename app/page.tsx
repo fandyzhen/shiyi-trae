@@ -510,7 +510,7 @@ function RegisterView({ setView }: any) {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="w-full px-4 sm:px-5 py-3 sm:py-4 bg-white/5 border border-white/10 rounded-xl sm:rounded-2xl text-white placeholder-gray-500 focus:outline-none focus:border-amber-500/50 focus:ring-2 focus:ring-amber-500/20 transition-all duration-300 text-sm sm:text-base"
-              placeholder="请输入邮箱地址"
+              placeholder="请输入你的EMAIL"
               required
             />
           </div>
