@@ -15,7 +15,7 @@ export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { getDataSource } from '@/lib/config/database';
 import { EmailTemplate } from '@/lib/entities/EmailTemplate';
-import { sendBulkEmails } from '@/lib/services/bulk-email.service';
+import { sendBulkEmailsSync } from '@/lib/services/bulk-email.service';
 
 export async function GET(request: NextRequest) {
   // 校验 Authorization 头
@@ -49,20 +49,23 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: '模板不存在' }, { status: 404 });
     }
 
-    const result = await sendBulkEmails({
+    // 使用同步版本，等待全部发送完成后再返回（Vercel serverless 需要）
+    const result = await sendBulkEmailsSync({
       fromEmail: template.fromEmail,
       fromName: template.fromName,
       subject: template.subject,
       content: template.content,
     });
 
-    console.log(`[Cron] 群发任务已启动，taskId=${result.taskId}，共 ${result.total} 位收件人`);
+    console.log(`[Cron] 群发完成，taskId=${result.taskId}，成功=${result.success}，失败=${result.failed}`);
 
     return NextResponse.json({
       success: true,
       taskId: result.taskId,
       total: result.total,
-      startedAt: new Date().toISOString(),
+      successCount: result.success,
+      failedCount: result.failed,
+      completedAt: new Date().toISOString(),
     });
   } catch (error: any) {
     console.error('[Cron] 群发触发失败:', error);

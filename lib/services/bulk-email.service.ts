@@ -48,11 +48,78 @@ export async function getRecipients(excludeUserIds?: string[]): Promise<{ id: st
   return qb.getMany();
 }
 
-export async function sendBulkEmails(params: BulkEmailParams): Promise<{ taskId: string; total: number }> {
-  const { fromEmail, fromName, subject, content, excludeUserIds } = params;
+async function executeSending(
+  taskId: string,
+  recipients: { id: string; email: string; nickname: string }[],
+  params: BulkEmailParams,
+  progress: BulkEmailProgress,
+): Promise<void> {
+  const { fromEmail, fromName, subject, content } = params;
+  const resend = new Resend(process.env.RESEND_API_KEY!);
+  const ds = await getDataSource();
+  const logRepo = ds.getRepository(EmailLog);
 
-  const resendApiKey = process.env.RESEND_API_KEY;
-  if (!resendApiKey) {
+  for (let i = 0; i < recipients.length; i += BATCH_SIZE) {
+    const batch = recipients.slice(i, i + BATCH_SIZE);
+
+    const sendPromises = batch.map(async (recipient) => {
+      const logEntry = logRepo.create({
+        taskId,
+        recipientEmail: recipient.email,
+        recipientName: recipient.nickname,
+        subject,
+        fromEmail,
+        fromName,
+        content,
+        status: 'failed' as const,
+      });
+
+      try {
+        const { error } = await resend.emails.send({
+          from: `${fromName} <${fromEmail}>`,
+          to: [recipient.email],
+          subject,
+          html: content,
+        });
+
+        if (error) {
+          logEntry.errorMessage = error.message || 'Unknown error';
+        } else {
+          logEntry.status = 'success' as const;
+        }
+      } catch (err: any) {
+        logEntry.errorMessage = err.message || 'Send exception';
+      }
+
+      try {
+        await logRepo.save(logEntry);
+      } catch (saveErr) {
+        console.error('[BulkEmail] Failed to save log:', saveErr);
+      }
+
+      progress.sent++;
+      if (logEntry.status === 'success') {
+        progress.success++;
+      } else {
+        progress.failed++;
+      }
+    });
+
+    await Promise.all(sendPromises);
+
+    if (i + BATCH_SIZE < recipients.length) {
+      await delay(BATCH_DELAY_MS);
+    }
+  }
+
+  progress.isCompleted = true;
+  console.log(`[BulkEmail] Task ${taskId} completed. Total: ${progress.total}, Success: ${progress.success}, Failed: ${progress.failed}`);
+}
+
+export async function sendBulkEmails(params: BulkEmailParams): Promise<{ taskId: string; total: number }> {
+  const { excludeUserIds } = params;
+
+  if (!process.env.RESEND_API_KEY) {
     throw new Error('RESEND_API_KEY 未配置');
   }
 
@@ -63,7 +130,6 @@ export async function sendBulkEmails(params: BulkEmailParams): Promise<{ taskId:
   }
 
   const taskId = uuidv4();
-
   const progress: BulkEmailProgress = {
     taskId,
     total: recipients.length,
@@ -74,69 +140,38 @@ export async function sendBulkEmails(params: BulkEmailParams): Promise<{ taskId:
   };
   progressStore.set(taskId, progress);
 
-  const ds = await getDataSource();
-  const logRepo = ds.getRepository(EmailLog);
-  const resend = new Resend(resendApiKey);
-
-  setImmediate(async () => {
-    for (let i = 0; i < recipients.length; i += BATCH_SIZE) {
-      const batch = recipients.slice(i, i + BATCH_SIZE);
-
-      const sendPromises = batch.map(async (recipient) => {
-        const logEntry = logRepo.create({
-          taskId,
-          recipientEmail: recipient.email,
-          recipientName: recipient.nickname,
-          subject,
-          fromEmail,
-          fromName,
-          content,
-          status: 'failed' as const,
-        });
-
-        try {
-          const { error } = await resend.emails.send({
-            from: `${fromName} <${fromEmail}>`,
-            to: [recipient.email],
-            subject,
-            html: content,
-          });
-
-          if (error) {
-            logEntry.errorMessage = error.message || 'Unknown error';
-          } else {
-            logEntry.status = 'success' as const;
-          }
-        } catch (err: any) {
-          logEntry.errorMessage = err.message || 'Send exception';
-        }
-
-        try {
-          await logRepo.save(logEntry);
-        } catch (saveErr) {
-          console.error('[BulkEmail] Failed to save log:', saveErr);
-        }
-
-        progress.sent++;
-        if (logEntry.status === 'success') {
-          progress.success++;
-        } else {
-          progress.failed++;
-        }
-      });
-
-      await Promise.all(sendPromises);
-
-      if (i + BATCH_SIZE < recipients.length) {
-        await delay(BATCH_DELAY_MS);
-      }
-    }
-
-    progress.isCompleted = true;
-    console.log(`[BulkEmail] Task ${taskId} completed. Total: ${progress.total}, Success: ${progress.success}, Failed: ${progress.failed}`);
-  });
+  // 后台异步执行（适用于长驻进程服务器）
+  setImmediate(() => executeSending(taskId, recipients, params, progress));
 
   return { taskId, total: recipients.length };
+}
+
+// 同步等待发送完成（适用于 Vercel 等 Serverless 环境的 cron 调用）
+export async function sendBulkEmailsSync(params: BulkEmailParams): Promise<{ taskId: string; total: number; success: number; failed: number }> {
+  if (!process.env.RESEND_API_KEY) {
+    throw new Error('RESEND_API_KEY 未配置');
+  }
+
+  const recipients = await getRecipients(params.excludeUserIds);
+
+  if (recipients.length === 0) {
+    throw new Error('没有可发送的收件人');
+  }
+
+  const taskId = uuidv4();
+  const progress: BulkEmailProgress = {
+    taskId,
+    total: recipients.length,
+    sent: 0,
+    success: 0,
+    failed: 0,
+    isCompleted: false,
+  };
+  progressStore.set(taskId, progress);
+
+  await executeSending(taskId, recipients, params, progress);
+
+  return { taskId, total: recipients.length, success: progress.success, failed: progress.failed };
 }
 
 export function getProgress(taskId: string): BulkEmailProgress | null {
