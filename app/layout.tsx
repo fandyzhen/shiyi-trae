@@ -13,7 +13,15 @@ export default function RootLayout({
 }) {
   return (
     <html lang="zh-CN">
-      <body>{children}</body>
+      <body>
+        {children}
+        <footer style={{ textAlign: 'center', padding: '16px', fontSize: '14px', color: '#888' }}>
+          有任何问题，请联系我们：
+          <a href="mailto:ask@dzqjiaju.com" style={{ color: '#888' }}>
+            ask@dzqjiaju.com
+          </a>
+        </footer>
+      </body>
     </html>
   );
 }
