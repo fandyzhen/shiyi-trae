@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 /**
  * 定时群发邮件 Cron 触发端点
  *
