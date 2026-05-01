@@ -52,10 +52,13 @@ export default function UsersPage() {
       
       if (cachedData) {
         const data = JSON.parse(cachedData);
-        setUsers(data.users);
-        setTotalPages(data.totalPages);
-        setLoading(false);
-        return;
+        if (data && Array.isArray(data.users)) {
+          setUsers(data.users);
+          setTotalPages(data.totalPages || 1);
+          setLoading(false);
+          return;
+        }
+        sessionStorage.removeItem(cacheKey);
       }
 
       const token = localStorage.getItem('token');

@@ -5,3 +5,6 @@ export { Subscription } from './Subscription';
 export type { SubscriptionStatus, SubscriptionPlan } from './Subscription';
 export { UsageRecord } from './UsageRecord';
 export type { UsageType } from './UsageRecord';
+export { EmailLog } from './EmailLog';
+export type { EmailLogStatus } from './EmailLog';
+export { EmailTemplate } from './EmailTemplate';

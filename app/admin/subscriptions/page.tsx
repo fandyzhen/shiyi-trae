@@ -60,10 +60,13 @@ export default function SubscriptionsPage() {
       
       if (cachedData) {
         const data = JSON.parse(cachedData);
-        setSubscriptions(data.subscriptions);
-        setTotalPages(data.totalPages);
-        setLoading(false);
-        return;
+        if (data && Array.isArray(data.subscriptions)) {
+          setSubscriptions(data.subscriptions);
+          setTotalPages(data.totalPages || 1);
+          setLoading(false);
+          return;
+        }
+        sessionStorage.removeItem(cacheKey);
       }
 
       const token = localStorage.getItem('token');

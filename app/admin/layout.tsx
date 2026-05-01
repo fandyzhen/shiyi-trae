@@ -127,6 +127,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     { path: '/admin', label: '概览' },
     { path: '/admin/users', label: '用户管理' },
     { path: '/admin/subscriptions', label: '订单管理' },
+    { path: '/admin/bulk-email', label: '邮件群发' },
   ];
 
   return (
