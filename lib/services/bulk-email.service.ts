@@ -48,16 +48,23 @@ export async function getRecipients(excludeUserIds?: string[]): Promise<{ id: st
   return qb.getMany();
 }
 
+interface SendResult {
+  email: string;
+  resendId: string | null;
+  error: string | null;
+}
+
 async function executeSending(
   taskId: string,
   recipients: { id: string; email: string; nickname: string }[],
   params: BulkEmailParams,
   progress: BulkEmailProgress,
-): Promise<void> {
+): Promise<SendResult[]> {
   const { fromEmail, fromName, subject, content } = params;
   const resend = new Resend(process.env.RESEND_API_KEY!);
   const ds = await getDataSource();
   const logRepo = ds.getRepository(EmailLog);
+  const results: SendResult[] = [];
 
   for (let i = 0; i < recipients.length; i += BATCH_SIZE) {
     const batch = recipients.slice(i, i + BATCH_SIZE);
@@ -74,6 +81,8 @@ async function executeSending(
         status: 'failed' as const,
       });
 
+      const result: SendResult = { email: recipient.email, resendId: null, error: null };
+
       try {
         const { data, error } = await resend.emails.send({
           from: `${fromName} <${fromEmail}>`,
@@ -85,14 +94,18 @@ async function executeSending(
         console.log(`[Resend] to=${recipient.email} id=${data?.id ?? 'null'} error=${error ? JSON.stringify(error) : 'null'}`);
 
         if (error) {
-          logEntry.errorMessage = error.message || 'Unknown error';
+          result.error = error.message || 'Unknown error';
+          logEntry.errorMessage = result.error;
         } else if (!data?.id) {
-          logEntry.errorMessage = 'Resend returned no email ID';
+          result.error = 'Resend returned no email ID';
+          logEntry.errorMessage = result.error;
         } else {
+          result.resendId = data.id;
           logEntry.status = 'success' as const;
         }
       } catch (err: any) {
-        logEntry.errorMessage = err.message || 'Send exception';
+        result.error = err.message || 'Send exception';
+        logEntry.errorMessage = result.error ?? 'Send exception';
         console.error(`[Resend] Exception for ${recipient.email}:`, err);
       }
 
@@ -108,6 +121,7 @@ async function executeSending(
       } else {
         progress.failed++;
       }
+      results.push(result);
     });
 
     await Promise.all(sendPromises);
@@ -119,6 +133,7 @@ async function executeSending(
 
   progress.isCompleted = true;
   console.log(`[BulkEmail] Task ${taskId} completed. Total: ${progress.total}, Success: ${progress.success}, Failed: ${progress.failed}`);
+  return results;
 }
 
 export async function sendBulkEmails(params: BulkEmailParams): Promise<{ taskId: string; total: number }> {
@@ -146,13 +161,19 @@ export async function sendBulkEmails(params: BulkEmailParams): Promise<{ taskId:
   progressStore.set(taskId, progress);
 
   // 后台异步执行（适用于长驻进程服务器）
-  setImmediate(() => executeSending(taskId, recipients, params, progress));
+  setImmediate(() => executeSending(taskId, recipients, params, progress).catch(console.error));
 
   return { taskId, total: recipients.length };
 }
 
 // 同步等待发送完成（适用于 Vercel 等 Serverless 环境的 cron 调用）
-export async function sendBulkEmailsSync(params: BulkEmailParams): Promise<{ taskId: string; total: number; success: number; failed: number }> {
+export async function sendBulkEmailsSync(params: BulkEmailParams): Promise<{
+  taskId: string;
+  total: number;
+  success: number;
+  failed: number;
+  results: SendResult[];
+}> {
   if (!process.env.RESEND_API_KEY) {
     throw new Error('RESEND_API_KEY 未配置');
   }
@@ -174,9 +195,9 @@ export async function sendBulkEmailsSync(params: BulkEmailParams): Promise<{ tas
   };
   progressStore.set(taskId, progress);
 
-  await executeSending(taskId, recipients, params, progress);
+  const results = await executeSending(taskId, recipients, params, progress);
 
-  return { taskId, total: recipients.length, success: progress.success, failed: progress.failed };
+  return { taskId, total: recipients.length, success: progress.success, failed: progress.failed, results };
 }
 
 export function getProgress(taskId: string): BulkEmailProgress | null {

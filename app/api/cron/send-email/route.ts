@@ -66,6 +66,8 @@ export async function GET(request: NextRequest) {
       successCount: result.success,
       failedCount: result.failed,
       completedAt: new Date().toISOString(),
+      // 诊断用：Resend 实际返回的 email ID
+      resendResults: result.results.map(r => ({ email: r.email, resendId: r.resendId, error: r.error })),
     });
   } catch (error: any) {
     console.error('[Cron] 群发触发失败:', error);
