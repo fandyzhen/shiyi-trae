@@ -84,11 +84,14 @@ async function executeSending(
       const result: SendResult = { email: recipient.email, resendId: null, error: null };
 
       try {
+        // 在 HTML 末尾加入隐藏注释，确保每次发送内容不同，避免 Resend 去重
+        const uniqueHtml = `${content}<!-- ${taskId}-${Date.now()} -->`;
+
         const { data, error } = await resend.emails.send({
           from: `${fromName} <${fromEmail}>`,
           to: [recipient.email],
           subject,
-          html: content,
+          html: uniqueHtml,
         });
 
         console.log(`[Resend] to=${recipient.email} id=${data?.id ?? 'null'} error=${error ? JSON.stringify(error) : 'null'}`);
