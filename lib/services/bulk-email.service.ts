@@ -75,20 +75,25 @@ async function executeSending(
       });
 
       try {
-        const { error } = await resend.emails.send({
+        const { data, error } = await resend.emails.send({
           from: `${fromName} <${fromEmail}>`,
           to: [recipient.email],
           subject,
           html: content,
         });
 
+        console.log(`[Resend] to=${recipient.email} id=${data?.id ?? 'null'} error=${error ? JSON.stringify(error) : 'null'}`);
+
         if (error) {
           logEntry.errorMessage = error.message || 'Unknown error';
+        } else if (!data?.id) {
+          logEntry.errorMessage = 'Resend returned no email ID';
         } else {
           logEntry.status = 'success' as const;
         }
       } catch (err: any) {
         logEntry.errorMessage = err.message || 'Send exception';
+        console.error(`[Resend] Exception for ${recipient.email}:`, err);
       }
 
       try {
