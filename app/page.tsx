@@ -248,7 +248,7 @@ export default function Home() {
               </h2>
             </div>
             <p className="text-base sm:text-xl text-gray-400 font-light max-w-xl sm:max-w-2xl mx-auto mb-8 sm:mb-12 leading-relaxed px-4">
-              无需试衣间，即可预见时尚，让AI为你完美呈现！
+              即可预见时尚，让AI为你完美呈现！
             </p>
             {process.env.NEXT_PUBLIC_CF_TURNSTILE_SITE_KEY && (
               <div className="mb-6">
